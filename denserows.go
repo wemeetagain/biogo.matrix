@@ -5,7 +5,7 @@
 package matrix
 
 import (
-	"github.com/ziutek/blas"
+	"code.google.com/p/biogo.blas"
 	"math"
 )
 
