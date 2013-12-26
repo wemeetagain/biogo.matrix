@@ -246,8 +246,8 @@ func (s *Sparse) Dense(d *Dense) *Dense {
 	d = d.reallocate(s.Dims())
 
 	for i, row := range s.matrix {
-		for j, e := range row {
-			d.set(i, j, e.value)
+		for _, e := range row {
+			d.set(i, e.index, e.value)
 		}
 	}
 

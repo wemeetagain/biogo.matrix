@@ -213,6 +213,8 @@ func (s *S) TestNewSparse(c *check.C) {
 		c.Check(m.Norm(Fro), check.Equals, test.fro, check.Commentf("Test %d", i))
 		c.Check(m, check.DeepEquals, test.mat, check.Commentf("Test %d", i))
 		c.Check(m.Equals(test.mat), check.Equals, true, check.Commentf("Test %d", i))
+		md, err := NewDense(test.a)
+		c.Check(m.Dense(nil), check.DeepEquals, md, check.Commentf("Test %d", i))
 	}
 }
 
