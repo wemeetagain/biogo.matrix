@@ -5,7 +5,6 @@
 package matrix
 
 import (
-	"code.google.com/p/biogo.blas"
 	"math"
 )
 
@@ -89,7 +88,7 @@ func (r denseRow) foldMulSum(a denseRow) float64 {
 	// 	s += e * a[i]
 	// }
 	// return s
-	return blas.Ddot(len(r), r, 1, a, 1)
+	return blasEngine.Ddot(len(r), r, 1, a, 1)
 }
 
 func (r denseRow) foldEqual(a denseRow) bool {

@@ -5,7 +5,6 @@
 package matrix
 
 import (
-	"code.google.com/p/biogo.blas"
 	"fmt"
 	"math"
 	"math/rand"
@@ -732,7 +731,7 @@ func (s *Sparse) subDense(b, c *Dense) *Dense {
 	if c != b {
 		c = c.reallocate(s.Dims())
 		copy(c.matrix, b.matrix)
-		blas.Dscal(len(c.matrix), -1, c.matrix, 1)
+		blasEngine.Dscal(len(c.matrix), -1, c.matrix, 1)
 	}
 	for r, row := range s.matrix {
 		for _, e := range row {

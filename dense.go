@@ -11,6 +11,8 @@ import (
 	"math/rand"
 )
 
+var blasEngine blas.Blas
+
 // Type Dense represents a dense matrix.
 type Dense struct {
 	Margin     int // The number of cells in from the edge of the matrix to format.
@@ -330,7 +332,7 @@ func (d *Dense) Column(c int) []float64 {
 		panic(ErrIndexOutOfRange)
 	}
 	col := make([]float64, d.rows)
-	blas.Dcopy(d.rows, d.matrix[c:], d.cols, col, 1)
+	blasEngine.Dcopy(d.rows, d.matrix[c:], d.cols, col, 1)
 	return col
 }
 
@@ -344,7 +346,7 @@ func (d *Dense) SetColumn(c int, v []float64) {
 	if len(v) != d.rows {
 		panic(ErrColLength)
 	}
-	blas.Dcopy(d.rows, v, 1, d.matrix[c:], d.cols)
+	blasEngine.Dcopy(d.rows, v, 1, d.matrix[c:], d.cols)
 }
 
 // Row returns a slice of float64 that is a copy of the values at row r of the matrix.
@@ -354,7 +356,7 @@ func (d *Dense) Row(r int) []float64 {
 		panic(ErrIndexOutOfRange)
 	}
 	row := make([]float64, d.cols)
-	blas.Dcopy(d.cols, d.matrix[r*d.cols:], 1, row, 1)
+	blasEngine.Dcopy(d.cols, d.matrix[r*d.cols:], 1, row, 1)
 	return row
 }
 
@@ -368,7 +370,7 @@ func (d *Dense) SetRow(r int, v []float64) {
 	if len(v) != d.cols {
 		panic(ErrRowLength)
 	}
-	blas.Dcopy(d.cols, v, 1, d.matrix[r*d.cols:], 1)
+	blasEngine.Dcopy(d.cols, v, 1, d.matrix[r*d.cols:], 1)
 }
 
 // Trace returns the trace of a square matrix. Trace will panic with ErrSquare if the matrix
@@ -1022,7 +1024,7 @@ func (d *Dense) DotDense(b, c *Dense) *Dense {
 	}
 	c = c.reallocate(d.rows, b.cols)
 
-	blas.Dgemm(blas.CblasRowMajor, blas.CblasNoTrans, blas.CblasNoTrans,
+	blasEngine.Dgemm(blas.RowMajor, blas.NoTrans, blas.NoTrans,
 		d.rows, b.cols, d.cols,
 		1.,
 		d.matrix, d.cols,
@@ -1093,7 +1095,7 @@ func (d *Dense) DotPivot(b *Pivot, c *Dense) *Dense {
 	if c != d {
 		c = c.reallocate(d.rows, d.cols)
 		for to, from := range b.xirtam {
-			blas.Dcopy(d.rows, d.matrix[from:], d.cols, c.matrix[to:], c.cols)
+			blasEngine.Dcopy(d.rows, d.matrix[from:], d.cols, c.matrix[to:], c.cols)
 		}
 		return c
 	}
@@ -1102,7 +1104,7 @@ func (d *Dense) DotPivot(b *Pivot, c *Dense) *Dense {
 	for to, from := range b.xirtam {
 		for to != from && !visit[from] {
 			visit[from] = true
-			blas.Dswap(d.rows, d.matrix[from:], d.cols, c.matrix[to:], c.cols)
+			blasEngine.Dswap(d.rows, d.matrix[from:], d.cols, c.matrix[to:], c.cols)
 			from = b.xirtam[from]
 		}
 		visit[from] = true

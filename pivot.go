@@ -5,7 +5,6 @@
 package matrix
 
 import (
-	"code.google.com/p/biogo.blas"
 	"fmt"
 	"math"
 )
@@ -406,7 +405,7 @@ func (p *Pivot) subDense(b, c *Dense) *Dense {
 	if c != b {
 		c = c.reallocate(p.Dims())
 		copy(c.matrix, b.matrix)
-		blas.Dscal(len(c.matrix), -1, c.matrix, 1)
+		blasEngine.Dscal(len(c.matrix), -1, c.matrix, 1)
 	}
 	for row, col := range p.xirtam {
 		c.matrix[row*c.cols+col]++
@@ -657,7 +656,7 @@ func (p *Pivot) DotDense(b *Dense, c *Dense) *Dense {
 	if c != b {
 		c = c.reallocate(b.rows, b.cols)
 		for to, from := range p.matrix {
-			blas.Dcopy(b.cols, b.matrix[from*b.cols:], 1, c.matrix[to*c.cols:], 1)
+			blasEngine.Dcopy(b.cols, b.matrix[from*b.cols:], 1, c.matrix[to*c.cols:], 1)
 		}
 		return c
 	}
@@ -666,7 +665,7 @@ func (p *Pivot) DotDense(b *Dense, c *Dense) *Dense {
 	for to, from := range p.matrix {
 		for to != from && !visit[from] {
 			visit[from] = true
-			blas.Dswap(b.cols, b.matrix[from*b.cols:], 1, c.matrix[to*c.cols:], 1)
+			blasEngine.Dswap(b.cols, b.matrix[from*b.cols:], 1, c.matrix[to*c.cols:], 1)
 			from = p.matrix[from]
 		}
 		visit[from] = true
