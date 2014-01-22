@@ -48,7 +48,6 @@ func Factors(V, Wo, Ho Matrix, tolerance float64, iterations int, limit time.Dur
 	}
 
 	for i := 0; i < iterations; i++ {
-		ok = true
 		projection := Norm(ElementsVector(gW.Filter(wFilter, gW), gH.Filter(hFilter, gH)), Fro)
 		if projection < tolerance*gradient || time.Now().Sub(to) > limit {
 			break
@@ -57,7 +56,7 @@ func Factors(V, Wo, Ho Matrix, tolerance float64, iterations int, limit time.Dur
 		if iW == 0 {
 			toleranceW *= 0.1
 		}
-		ok = ok && subOk
+		ok = subOk
 		W = W.T(nil)
 		gW = gW.T(nil)
 
