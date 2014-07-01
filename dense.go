@@ -74,7 +74,7 @@ func (d *Dense) VectorFilterDense(f VectorFilterFunc) *Dense {
 //given column #s, create new Denses based on unique combinations
 func (d *Dense) SplitDense(cols []int) map[uint32]*Dense {
     combos := make(map[uint32]*Dense,0)
-    
+
     for i:=0; i < d.rows; i++ {
         g := make([]byte,len(cols)*8)
         for c_index, c := range cols {
@@ -104,8 +104,8 @@ func (d *Dense) VectorApplyDense(f VectorApplyFunc) *Dense {
 	    applied := f(d.matrix[i*d.cols:(i+1)*d.cols])
 	    if applied != nil {
 	        r++
-    	    newRows = append(newRows,applied...)
-    	}
+            newRows = append(newRows,applied...)
+        }
 	}
     den := &Dense{
         rows:r,
@@ -113,6 +113,35 @@ func (d *Dense) VectorApplyDense(f VectorApplyFunc) *Dense {
         matrix: denseRow(newRows),
     }
 	return den
+}
+
+func (d *Dense) MaxFrom(index int, col bool) (float64,int) {
+    var n float64
+    var oindex int
+    if !col {
+        if index < 0 || index >= d.rows {
+            panic(ErrColLength)
+        }
+        for i:=0; i < d.rows; i++ {
+            tempn := n
+            n = math.Max(d.at(i,index),n)
+            if tempn != n {
+                oindex = i
+            }
+        }
+    } else {
+        if index < 0 || index >= d.cols {
+            panic(ErrRowLength)
+        }
+        for i:=0; i < d.cols; i++ {
+            tempn := n
+            n = math.Max(d.at(index,i),n)
+            if tempn != n {
+                oindex = i
+            }
+        }
+    }
+    return n, oindex
 }
 
 // end additions
