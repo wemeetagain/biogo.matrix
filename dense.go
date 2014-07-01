@@ -11,6 +11,112 @@ import (
 	"math/rand"
 )
 
+// additions
+
+import (
+    "encoding/binary"
+    xxh "bitbucket.org/StephaneBunel/xxhash-go"
+    )
+
+type VectorFilterFunc func([]float64) bool
+type VectorApplyFunc func([]float64) []float64
+
+func (d *Dense) AppendDense(b, c *Dense) *Dense {
+    if d.cols != b.cols {
+        panic(ErrColLength)
+    }
+    c = c.reallocate(d.rows+b.rows, d.cols)
+    copy(c.matrix[0:d.cols*d.rows], d.matrix)
+    copy(c.matrix[d.cols*d.rows:d.cols*d.rows+b.cols*b.rows], b.matrix)
+
+    return c
+}
+
+func AppendDense(d ...*Dense) *Dense {
+    var r int
+    c := d[0].cols
+    for _, dens := range d {
+        if dens.cols != c {
+            panic(ErrColLength)
+        }
+        r += dens.rows
+    }
+    newDens := &Dense{
+        rows: r,
+        cols: c,
+        matrix: make(denseRow,r*c),
+    }
+    r = 0
+    for _, dens := range d {
+        copy(newDens.matrix[r*newDens.cols:r*newDens.cols+dens.rows*dens.cols],dens.matrix)
+        r += dens.rows
+    }
+    return newDens
+}
+
+func (d *Dense) VectorFilterDense(f VectorFilterFunc) *Dense {
+    c := &Dense{
+        rows:d.rows,
+        cols:d.cols,
+        matrix: make(denseRow,d.rows*d.cols),
+    }
+    r := 0
+    for i:=0; i < d.rows; i++ {
+        if f(d.matrix[i*d.cols:i*d.cols+d.rows]) {
+            r++
+            copy(c.matrix[i*d.cols:(i+1)*d.cols],d.matrix[i*d.cols:(i+1)*d.cols])
+        }
+    }
+    c = c.reallocate(r, c.cols)
+    return c
+}
+
+//given column #s, create new Denses based on unique combinations
+func (d *Dense) SplitDense(cols []int) map[uint32]*Dense {
+    combos := make(map[uint32]*Dense,0)
+    
+    for i:=0; i < d.rows; i++ {
+        g := make([]byte,len(cols)*8)
+        for c_index, c := range cols {
+            binary.BigEndian.PutUint64(g[c_index*8:(c_index+1)*8],math.Float64bits(d.matrix[i*d.cols+c]))
+        }
+        group := xxh.Checksum32(g)
+        if d, ok := combos[group]; ok {
+            combos[group] = combos[group].reallocate(combos[group].rows + 1,combos[group].cols)
+            copy(combos[group].matrix[(combos[group].rows-1)*combos[group].cols:combos[group].rows*combos[group].cols],d.matrix[i*d.cols:(i+1)*d.cols])
+        } else {
+            combos[group] = &Dense{
+                rows: 1,
+                cols: d.cols,
+                matrix: make(denseRow, d.cols),
+            }
+            copy(combos[group].matrix[0:d.cols],d.matrix[i*d.cols:(i+1)*d.cols])
+        }
+    }
+
+    return combos
+}
+
+func (d *Dense) VectorApplyDense(f VectorApplyFunc) *Dense {
+    var r int
+    newRows := make([]float64,0)
+	for i:=0; i < d.rows; i++ {
+	    applied := f(d.matrix[i*d.cols:(i+1)*d.cols])
+	    if applied != nil {
+	        r++
+    	    newRows = append(newRows,applied...)
+    	}
+	}
+    den := &Dense{
+        rows:r,
+        cols:len(newRows)/r,
+        matrix: denseRow(newRows),
+    }
+	return den
+}
+
+// end additions
+
 var blasEngine blas.Blas
 
 // Type Dense represents a dense matrix.
