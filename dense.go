@@ -81,8 +81,13 @@ func (d *Dense) SplitDense(cols []int) map[uint32]*Dense {
             binary.BigEndian.PutUint64(g[c_index*8:(c_index+1)*8],math.Float64bits(d.matrix[i*d.cols+c]))
         }
         group := xxh.Checksum32(g)
-        if d, ok := combos[group]; ok {
-            combos[group] = combos[group].reallocate(combos[group].rows + 1,combos[group].cols)
+        if _, ok := combos[group]; ok {
+            n := &Dense{
+                rows: combos[group].rows + 1,
+                cols: combos[group].cols,
+                matrix: make(denseRow, (combos[group].rows + 1)*combos[group].cols),
+            }
+            combos[group] = combos[group].FillDense(n)
             copy(combos[group].matrix[(combos[group].rows-1)*combos[group].cols:combos[group].rows*combos[group].cols],d.matrix[i*d.cols:(i+1)*d.cols])
         } else {
             combos[group] = &Dense{
@@ -122,9 +127,9 @@ func (d *Dense) MaxFrom(index int, col bool) (float64,int) {
         if index < 0 || index >= d.rows {
             panic(ErrColLength)
         }
-        for i:=0; i < d.rows; i++ {
+        for i:=0; i < d.cols; i++ {
             tempn := n
-            n = math.Max(d.at(i,index),n)
+            n = math.Max(d.at(index,i),n)
             if tempn != n {
                 oindex = i
             }
@@ -133,15 +138,33 @@ func (d *Dense) MaxFrom(index int, col bool) (float64,int) {
         if index < 0 || index >= d.cols {
             panic(ErrRowLength)
         }
-        for i:=0; i < d.cols; i++ {
+        for i:=0; i < d.rows; i++ {
             tempn := n
-            n = math.Max(d.at(index,i),n)
+            n = math.Max(d.at(i,index),n)
             if tempn != n {
                 oindex = i
             }
         }
     }
     return n, oindex
+}
+
+func (d *Dense) FillDense(c *Dense) *Dense {
+    if d.rows*d.cols > c.rows*c.cols {
+        panic(ErrRowLength)
+    }
+    copy(c.matrix[:d.rows*d.cols],d.matrix[:d.rows*d.cols])
+    return c
+}
+
+func (d *Dense) ToFloatSlice() [][]float64 {
+    f := make([][]float64,d.rows)
+    for i:=0; i<d.rows; i++ {
+        r := make([]float64,d.cols)
+        copy(r,d.matrix[i*d.cols:(i+1)*d.cols])
+        f[i] = r
+    }
+    return f
 }
 
 // end additions
